@@ -1,0 +1,2169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carroll Ping Pong Club — Elo & Match Tracker</title>
+
+  <style>
+  :root {
+    --bg:#f7f8f3;
+    --card:#fff;
+    --text:#183629;
+    --muted:#667269;
+    --line:#dce3d9;
+    --accent:#006b3f;
+    --accent-hover:#00512f;
+    --accent-soft:#edf4eb;
+    --accent2:#173d2a;
+    --green:#006b3f;
+    --red:#ac3434;
+    --radius-sm:4px;
+    --radius-md:5px;
+    --radius-lg:6px;
+  }
+  * {
+    box-sizing:border-box;
+  }
+  body {
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Helvetica Neue",Arial,sans-serif;
+    line-height:1.5;
+  }
+  button,input,select {
+    font:inherit;
+  }
+  button,a,input,select {
+    -webkit-tap-highlight-color:transparent;
+  }
+  button {
+    cursor:pointer;
+  }
+  button:disabled {
+    cursor:not-allowed;
+    opacity:.55;
+  }
+  a {
+    color:var(--accent);
+  }
+  :where(button,a,input,select):focus-visible {
+    outline:3px solid #b48a32;
+    outline-offset:4px;
+  }
+  .hidden {
+    display:none!important;
+  }
+  .muted {
+    color:var(--muted);
+  }
+  .skip-link {
+    position:absolute;
+    left:16px;
+    top:-100px;
+    padding:12px;
+    background:#fff;
+    z-index:1000;
+  }
+  .skip-link:focus {
+    top:12px;
+  }
+  nav {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:32px;
+    padding:19px max(24px,calc((100vw - 1160px)/2));
+    background:#fff;
+    border-top:5px solid var(--accent);
+    border-bottom:1px solid var(--line);
+  }
+  .brand {
+    display:flex;
+    align-items:center;
+    gap:11px;
+    text-decoration:none;
+    color:var(--accent2);
+    font-size:17px;
+    font-weight:800;
+    letter-spacing:.08em;
+    line-height:1.1;
+    white-space:nowrap;
+  }
+  .brand-icon {
+    display:grid;
+    place-items:center;
+    background:var(--accent);
+    color:white;
+    font:bold 33px Georgia,serif;
+    width:42px;
+    height:46px;
+    border-radius:2px;
+  }
+  .brand div span {
+    display:block;
+    font-size:11px;
+    letter-spacing:.06em;
+    font-weight:500;
+    margin-top:5px;
+    color:var(--muted);
+  }
+  nav .links {
+    display:flex;
+    gap:25px;
+    align-items:center;
+  }
+  nav button {
+    border:0;
+    background:none;
+    padding:13px 0;
+    color:var(--muted);
+    font-size:13px;
+    font-weight:600;
+    border-bottom:2px solid transparent;
+    white-space:nowrap;
+  }
+  nav button:hover {
+    color:var(--accent);
+  }
+  nav button.active {
+    color:var(--accent);
+    border-bottom-color:var(--accent);
+  }
+  .nav-actions {
+    display:flex;
+    align-items:center;
+  }
+  .live-dot {
+    display:inline-flex;
+    gap:7px;
+    align-items:center;
+    font-size:11px;
+    white-space:nowrap;
+    color:var(--muted);
+  }
+  .live-dot:before {
+    content:"";
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:var(--accent);
+  }
+  .live-dot.offline:before {
+    background:#ad8539;
+  }
+  main {
+    max-width:1208px;
+    margin:auto;
+    padding:42px 24px 72px;
+  }
+  .section {
+    display:none;
+  }
+  .section.active {
+    display:block;
+  }
+  .club-intro {
+    display:grid;
+    grid-template-columns:1.15fr 1fr;
+    gap:64px;
+    align-items:center;
+    padding:12px 0 40px;
+  }
+  .eyebrow {
+    font-size:10px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.14em;
+    color:var(--accent);
+    margin:0 0 12px;
+  }
+  .intro-copy h1 {
+    font:500 clamp(36px,4.3vw,59px)/1.08 Georgia,"Times New Roman",serif;
+    letter-spacing:-.04em;
+    margin:0 0 22px;
+  }
+  .intro-description {
+    max-width:420px;
+    font-size:14px;
+    line-height:1.8;
+    color:var(--muted);
+    margin:0 0 25px;
+  }
+  .actions {
+    display:flex;
+    gap:20px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  .btn {
+    display:inline-flex;
+    justify-content:center;
+    align-items:center;
+    gap:18px;
+    border:1px solid transparent;
+    border-radius:4px;
+    min-height:44px;
+    padding:11px 17px;
+    font-size:13px;
+    font-weight:600;
+    text-decoration:none;
+  }
+  .btn.accent,.btn.dark {
+    background:var(--accent);
+    color:#fff;
+  }
+  .btn.accent:hover,.btn.dark:hover {
+    background:var(--accent-hover);
+  }
+  .btn.primary {
+    background:#fff;
+    color:var(--accent);
+  }
+  .btn.outline {
+    border-color:var(--line);
+    background:transparent;
+    color:var(--accent);
+  }
+  .text-link,.inline-link {
+    border:0;
+    background:none;
+    padding:8px 0;
+    color:var(--accent);
+    font-size:12px;
+    font-weight:650;
+    text-align:left;
+  }
+  .text-link:hover,.inline-link:hover {
+    text-decoration:underline;
+    text-underline-offset:4px;
+  }
+  .court-art {
+    background:#075435;
+    padding:22px 28px;
+    color:#d2e3d4;
+    border-radius:3px;
+    overflow:hidden;
+  }
+  .court-art svg {
+    display:block;
+    width:100%;
+    height:auto;
+  }
+  .court-caption {
+    display:flex;
+    justify-content:space-between;
+    gap:20px;
+    font-size:9px;
+    letter-spacing:.17em;
+    font-weight:600;
+  }
+  .club-stats {
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    gap:45px;
+    padding:22px 0;
+    margin-bottom:38px;
+  }
+  .club-stats>div {
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .club-stats strong {
+    font-size:25px;
+    font-weight:500;
+    letter-spacing:-.04em;
+    font-variant-numeric:tabular-nums;
+  }
+  .club-stats span,.club-stats>p {
+    font-size:11px;
+    color:var(--muted);
+  }
+  .club-stats>p {
+    margin:0 0 0 auto;
+  }
+  .home-board {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 290px;
+    gap:38px;
+  }
+  .board-main {
+    min-width:0;
+  }
+  .board-panel {
+    margin-bottom:34px;
+  }
+  .panel-heading {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:17px;
+  }
+  .panel-heading .eyebrow {
+    margin-bottom:6px;
+  }
+  .panel-heading h2,.join-panel h2,.how-to h2 {
+    font-size:22px;
+    letter-spacing:-.04em;
+    font-weight:550;
+    line-height:1.2;
+    margin:0;
+  }
+  .join-panel {
+    padding:26px;
+    background:#eaf0e4;
+    border-top:3px solid var(--accent);
+  }
+  .join-panel p:not(.eyebrow) {
+    font-size:13px;
+    line-height:1.75;
+    color:var(--muted);
+  }
+  .join-panel .btn {
+    width:100%;
+    margin:8px 0 3px;
+  }
+  .join-panel .small-note {
+    font-size:11px!important;
+  }
+  .inline-link {
+    font-size:inherit;
+    padding:0;
+  }
+  .how-to {
+    padding:28px 7px;
+  }
+  .how-to h2 {
+    font-size:18px;
+  }
+  .how-to ol {
+    list-style:none;
+    counter-reset:steps;
+    padding:0;
+    margin:22px 0 12px;
+  }
+  .how-to li {
+    position:relative;
+    padding:0 0 20px 34px;
+    counter-increment:steps;
+  }
+  .how-to li:before {
+    content:"0" counter(steps);
+    position:absolute;
+    left:0;
+    top:1px;
+    font-size:10px;
+    color:var(--accent);
+    font-weight:bold;
+  }
+  .how-to strong {
+    display:block;
+    font-size:12px;
+    font-weight:650;
+  }
+  .how-to li span {
+    display:block;
+    font-size:12px;
+    line-height:1.7;
+    color:var(--muted);
+    margin-top:3px;
+  }
+  .empty-state {
+    padding:30px 18px;
+    text-align:center;
+    background:#fff;
+    color:var(--text);
+    font-size:14px;
+    border:1px solid var(--line);
+  }
+  .empty-state span {
+    color:var(--muted);
+    font-size:12px;
+  }
+  .result-row {
+    display:flex;
+    justify-content:space-between;
+    gap:20px;
+    align-items:center;
+    padding:18px 20px;
+    border:1px solid var(--line);
+    border-top:0;
+    background:white;
+    font-size:13px;
+  }
+  .result-row:first-child {
+    border-top:1px solid var(--line);
+  }
+  .result-row small {
+    display:block;
+    color:var(--muted);
+    font-size:11px;
+    margin-top:5px;
+  }
+  .result-score {
+    font-size:17px;
+    white-space:nowrap;
+    font-variant-numeric:tabular-nums;
+  }
+  .rating-number {
+    font-weight:700;
+    color:var(--accent);
+    text-align:right;
+  }
+  .grid-2 {
+    display:grid;
+    grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);
+    gap:24px;
+  }
+  .card {
+    background:white;
+    border:1px solid var(--line);
+    border-radius:5px;
+    padding:28px;
+    min-width:0;
+  }
+  .card h2 {
+    font-size:24px;
+    line-height:1.25;
+    letter-spacing:-.035em;
+    font-weight:550;
+    margin:0 0 18px;
+  }
+  .card p {
+    font-size:14px;
+    line-height:1.75;
+  }
+  .card-header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:18px;
+    flex-wrap:wrap;
+    margin-bottom:24px;
+  }
+  .card-header h2 {
+    margin:0;
+  }
+  .table-wrap {
+    overflow-x:auto;
+    border:1px solid var(--line);
+    border-radius:3px;
+    background:#fff;
+  }
+  table {
+    width:100%;
+    border-collapse:collapse;
+    text-align:left;
+  }
+  .table-wrap table {
+    min-width:540px;
+  }
+  .home-table table {
+    min-width:0;
+  }
+  .home-table .empty-state {
+    border:0;
+  }
+  .home-table th:last-child {
+    text-align:right;
+  }
+  th,td {
+    padding:15px 18px;
+    border-bottom:1px solid var(--line);
+    font-size:13px;
+  }
+  th {
+    background:#f0f4ed;
+    color:var(--muted);
+    font-size:10px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.07em;
+  }
+  tbody tr:last-child td {
+    border-bottom:0;
+  }
+  tbody tr:hover {
+    background:#f8faf5;
+  }
+  .rank {
+    color:var(--muted);
+    width:65px;
+    font-variant-numeric:tabular-nums;
+  }
+  .rank-1,.rank-2,.rank-3 {
+    color:var(--accent);
+  }
+  td {
+    font-variant-numeric:tabular-nums;
+  }
+  .highlight-row {
+    background:#eef6eb;
+  }
+  .elo-pill {
+    font-weight:700;
+    color:var(--accent);
+  }
+  form {
+    display:grid;
+    gap:16px;
+  }
+  .form-grid {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  .form-group {
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  label {
+    font-size:12px;
+    font-weight:600;
+  }
+  input,select {
+    width:100%;
+    min-height:44px;
+    padding:10px 12px;
+    border:1px solid #cbd4c8;
+    border-radius:4px;
+    background:#fff;
+    color:var(--text);
+    font-size:14px;
+  }
+  input:focus,select:focus {
+    border-color:var(--accent);
+  }
+  .notice {
+    background:#edf4eb;
+    color:#245637;
+    border:1px solid #d1dfcb;
+    border-radius:4px;
+    padding:12px 14px;
+    font-size:12px;
+    line-height:1.65;
+  }
+  .notice.warning {
+    background:#faf6e9;
+    border-color:#e7d9ae;
+    color:#775c22;
+  }
+  .notice.danger {
+    background:#fff2ef;
+    border-color:#edd1ca;
+    color:#943d32;
+  }
+  .notice.success {
+    background:#edf4eb;
+    color:var(--accent);
+  }
+  .small-btn {
+    border:1px solid transparent;
+    border-radius:3px;
+    padding:8px 11px;
+    min-height:36px;
+    font-size:12px;
+    font-weight:600;
+  }
+  .small-btn.primary,.small-btn.success {
+    background:var(--accent);
+    color:white;
+  }
+  .small-btn.primary:hover,.small-btn.success:hover {
+    background:var(--accent-hover);
+  }
+  .small-btn.secondary {
+    background:#f0f3ed;
+    border-color:var(--line);
+    color:var(--text);
+  }
+  .small-btn.danger {
+    background:#fff2ef;
+    color:var(--red);
+    border-color:#edd1ca;
+  }
+  .auth-toggle-group {
+    display:flex;
+    gap:0;
+    border-bottom:1px solid var(--line);
+    margin-bottom:22px;
+  }
+  .auth-toggle-btn {
+    flex:1;
+    padding:11px 8px;
+    background:none;
+    border:0;
+    border-bottom:2px solid transparent;
+    color:var(--muted);
+    font-size:13px;
+    font-weight:600;
+  }
+  .auth-toggle-btn.active {
+    border-bottom-color:var(--accent);
+    color:var(--accent);
+  }
+  .account-card {
+    background:#f4f6ef;
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:18px;
+    margin-top:18px;
+  }
+  .user-pill {
+    font-weight:600;
+    font-size:15px;
+  }
+  .elo-preview-box {
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    padding:12px;
+    background:#f0f4ed;
+    border:1px solid var(--line);
+    font-size:12px;
+    border-radius:4px;
+  }
+  .tabs {
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .tab-btn {
+    border:1px solid transparent;
+    background:none;
+    color:var(--muted);
+    border-radius:3px;
+    padding:9px 11px;
+    font-size:12px;
+    min-height:38px;
+  }
+  .tab-btn.active {
+    color:var(--accent);
+    background:#edf4eb;
+    border-color:#d2e0cd;
+  }
+  .match-list {
+    display:flex;
+    flex-direction:column;
+  }
+  .match-item {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:18px;
+    padding:18px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .match-item:last-child {
+    border-bottom:0;
+  }
+  .match-main {
+    min-width:0;
+    flex:1;
+  }
+  .match-headline {
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex-wrap:wrap;
+    font-size:14px;
+  }
+  .match-meta {
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    color:var(--muted);
+    font-size:11px;
+    margin-top:5px;
+  }
+  .match-actions {
+    display:flex;
+    gap:6px;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+  .badge,.confirm-chip {
+    display:inline-flex;
+    align-items:center;
+    padding:4px 7px;
+    font-size:10px;
+    border-radius:3px;
+  }
+  .badge-official,.confirm-chip.done {
+    background:#edf4eb;
+    color:var(--accent);
+  }
+  .badge-pending {
+    background:#faf1d8;
+    color:#775c22;
+  }
+  .confirm-status {
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-top:8px;
+  }
+  .confirm-chip {
+    background:#f2f3ef;
+    color:var(--muted);
+  }
+  footer {
+    max-width:1160px;
+    margin:auto;
+    padding:26px 0;
+    border-top:1px solid var(--line);
+    font-size:11px;
+    line-height:1.9;
+    color:var(--muted);
+  }
+  footer strong {
+    color:var(--text);
+    font-weight:600;
+  }
+  @media(max-width:1050px) {
+    nav {
+      gap:20px;
+      flex-wrap:wrap;
+    }
+    nav .links {
+      gap:22px;
+    }
+    .nav-actions {
+      display:none;
+    }
+    .club-intro {
+      gap:30px;
+    }
+    .home-board {
+      gap:26px;
+      grid-template-columns:minmax(0,1fr) 260px;
+    }
+    .club-stats {
+      gap:22px;
+    }
+    .club-stats>div {
+      gap:7px;
+    }
+    .club-stats>p {
+      font-size:10px;
+    }
+    footer {
+      margin:0 24px;
+    }
+  }
+  @media(max-width:760px) {
+    nav {
+      padding:15px 20px 0;
+      gap:14px;
+    }
+    .brand-icon {
+      width:32px;
+      height:36px;
+      font-size:26px;
+    }
+    .brand {
+      font-size:15px;
+    }
+    nav .links {
+      width:100%;
+      overflow-x:auto;
+      justify-content:space-between;
+      gap:18px;
+    }
+    nav button {
+      font-size:12px;
+      padding:10px 0 13px;
+    }
+    main {
+      padding:28px 20px 40px;
+    }
+    .club-intro {
+      grid-template-columns:1fr;
+      gap:28px;
+      padding:8px 0 28px;
+    }
+    .intro-copy h1 {
+      font-size:44px;
+    }
+    .intro-description {
+      max-width:450px;
+    }
+    .court-art {
+      padding:17px 24px;
+      max-width:520px;
+    }
+    .court-art svg {
+      height:175px;
+    }
+    .club-stats {
+      flex-wrap:wrap;
+      gap:18px;
+      justify-content:space-between;
+      padding:20px 0;
+      margin-bottom:28px;
+    }
+    .club-stats>div {
+      flex-direction:column;
+      gap:3px;
+    }
+    .club-stats>p {
+      width:100%;
+      margin:0;
+    }
+    .home-board,.grid-2 {
+      grid-template-columns:1fr;
+    }
+    .club-sidebar {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:24px;
+    }
+    .card {
+      padding:20px;
+    }
+    .card h2 {
+      font-size:23px;
+    }
+    .card-header {
+      gap:14px;
+    }
+    .match-item {
+      align-items:flex-start;
+      flex-direction:column;
+      gap:12px;
+    }
+    .table-wrap th,.table-wrap td {
+      padding:13px 12px;
+    }
+    .home-table th,.home-table td {
+      font-size:12px;
+    }
+    .home-table th {
+      font-size:9px;
+    }
+    .panel-heading h2 {
+      font-size:22px;
+    }
+    .panel-heading .text-link {
+      font-size:11px;
+    }
+    .how-to {
+      padding:24px 0;
+    }
+    footer {
+      margin:0 20px;
+    }
+  }
+  @media(max-width:480px) {
+    nav .links {
+      gap:12px;
+    }
+    nav button {
+      font-size:11px;
+    }
+    .club-sidebar,.form-grid {
+      grid-template-columns:1fr;
+    }
+    .intro-copy h1 {
+      font-size:40px;
+    }
+    .actions {
+      gap:14px;
+    }
+    .actions .text-link {
+      font-size:11px;
+    }
+    .court-art svg {
+      height:155px;
+    }
+    .card-header input {
+      max-width:none!important;
+    }
+    .rank {
+      width:40px;
+    }
+    .match-actions .badge {
+      white-space:normal;
+    }
+  }
+  @media(prefers-reduced-motion:reduce) {
+    *,*::before {
+      animation:none!important;
+      transition:none!important;
+      scroll-behavior:auto!important;
+    }
+  }
+  </style>
+</head>
+
+<body>
+
+<!-- =========================================
+     NAVIGATION
+========================================= -->
+<a class="skip-link" href="#main-content">Skip to content</a>
+<nav aria-label="Main navigation">
+  <a class="brand" href="#home" onclick="showSection('home'); return false;">
+    <span class="brand-icon" aria-hidden="true">C</span>
+    <div>CARROLL<span>Ping Pong Club</span></div>
+  </a>
+
+  <div class="links">
+    <button class="active" data-section="home" aria-current="page">Clubhouse</button>
+    <button data-section="leaderboard">Leaderboard</button>
+    <button data-section="matches">Matches</button>
+    <button data-section="players">Players</button>
+    <button data-section="rules">Rules & Elo</button>
+    <button data-section="admin">Admin</button>
+  </div>
+
+  <div class="nav-actions">
+    <span class="live-dot" id="syncStatus" role="status" title="Club data connection">Connecting</span>
+  </div>
+</nav>
+
+<!-- =========================================
+     HERO
+========================================= -->
+
+
+<!-- =========================================
+     MAIN CONTENT
+========================================= -->
+<main id="main-content" tabindex="-1">
+
+  <!-- =========================================
+       HOME SECTION
+  ========================================= -->
+  <section id="home" class="section active">
+    <div class="club-intro">
+      <div class="intro-copy">
+        <p class="eyebrow">Carroll High School / Ping Pong Club</p>
+        <h1>A little rivalry.<br>A lot of ping pong.</h1>
+        <p class="intro-description">Your next match starts here. Meet the club, follow the rankings, and put your latest result on the board.</p>
+        <div class="actions"><button class="btn accent" onclick="showSection('matches')">Report a match <span aria-hidden="true">↗</span></button><button class="text-link" onclick="showSection('leaderboard')">Explore the rankings →</button></div>
+      </div>
+      <div class="court-art" aria-hidden="true">
+        <div class="court-caption"><span>CARROLL</span><span>TABLE TENNIS</span></div>
+        <svg viewBox="0 0 480 300" fill="none"><path d="M80 45H400V255H80Z" stroke="#b7d9c3" stroke-width="3"/><path d="M240 45V255M80 150H400" stroke="#b7d9c3" stroke-width="2"/><path d="M66 150H414" stroke="#fff" stroke-width="7"/><path d="M66 143V158M414 143V158" stroke="#fff" stroke-width="3"/><g transform="translate(315 72) rotate(35)"><rect x="-8" y="34" width="16" height="48" rx="3" fill="#dab88d"/><ellipse rx="38" ry="46" fill="#eff2da"/><path d="M-30 28H30" stroke="#143f2c" stroke-width="3"/></g><circle cx="152" cy="220" r="12" fill="#fff"/><path d="M137 242L123 261M133 229L109 239" stroke="#80b095" stroke-width="2"/></svg>
+        <div class="court-caption"><span>11 POINTS. WIN BY 2.</span><span>YOUR SERVE.</span></div>
+      </div>
+    </div>
+    <div class="club-stats" aria-label="Club statistics">
+      <div><strong id="statPlayers">—</strong><span>Club players</span></div>
+      <div><strong id="statMatches">—</strong><span>Official matches</span></div>
+      <div><strong id="statElo">—</strong><span>Average Elo</span></div>
+      <p id="statPendingSub">Loading club results</p>
+    </div>
+    <div class="home-board">
+      <div class="board-main">
+        <section class="board-panel" aria-labelledby="homeRankingTitle">
+          <div class="panel-heading"><div><p class="eyebrow">The club ladder</p><h2 id="homeRankingTitle">Players to beat</h2></div><button class="text-link" onclick="showSection('leaderboard')">Full rankings →</button></div>
+          <div class="table-wrap home-table"><table><thead><tr><th scope="col">Rank</th><th scope="col">Player</th><th scope="col">W–L</th><th scope="col">Elo</th></tr></thead><tbody id="homeLeaderboard"></tbody></table></div>
+        </section>
+        <section class="board-panel" aria-labelledby="homeResultsTitle">
+          <div class="panel-heading"><div><p class="eyebrow">Around the tables</p><h2 id="homeResultsTitle">Latest results</h2></div><button class="text-link" onclick="showSection('matches')">All matches →</button></div>
+          <div id="homeResults"></div>
+        </section>
+      </div>
+      <aside class="club-sidebar">
+        <div class="join-panel"><p class="eyebrow">Room for one more</p><h2>Get on the board.</h2><p>Create your player account, find an opponent, and play your first match.</p><button class="btn accent" onclick="showSection('matches'); switchAuthView('signup'); document.getElementById('signupName').focus();">Join the club →</button><p class="small-note">Already a member? <button class="inline-link" onclick="showSection('matches'); switchAuthView('login'); document.getElementById('loginUsername').focus();">Log in</button></p></div>
+        <div class="how-to"><p class="eyebrow">Good to know</p><h2>Every game counts.</h2><ol><li><strong>Start at 1000.</strong><span>Everyone joins with the same Elo rating.</span></li><li><strong>Play your match.</strong><span>Record the winner and final score.</span></li><li><strong>Confirm the result.</strong><span>Both players confirm, or an admin records it officially.</span></li></ol><button class="text-link" onclick="showSection('rules')">Read the club rules →</button></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- =========================================
+       LEADERBOARD SECTION
+  ========================================= -->
+  <section id="leaderboard" class="section">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2>Club Leaderboard</h2>
+          <div class="muted" style="font-size:13px; margin-top:3px;">
+            Rankings update after player confirmations or an official admin result.
+          </div>
+        </div>
+        <input
+          id="leaderboardSearch"
+          type="text"
+          aria-label="Search leaderboard" placeholder="Search player..."
+          style="max-width: 220px; padding: 7px 10px; font-size: 13px;"
+          oninput="renderLeaderboard()"
+        >
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 60px;">Rank</th>
+              <th>Player</th>
+              <th>ELO Rating</th>
+              <th>Matches</th>
+              <th>Record (W-L)</th>
+              <th>Win Rate</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================
+       MATCHES & ACCOUNT SECTION
+  ========================================= -->
+  <section id="matches" class="section">
+    <div class="grid-2">
+
+      <!-- REPORT MATCH CARD -->
+      <div class="card">
+        <div class="card-header">
+          <h2>Report a match</h2>
+        </div>
+
+        <div id="reportNoticeLoggedOut" class="notice warning" style="margin-bottom: 14px;">
+          <strong>Login Required:</strong> Log in or create an account to submit a match.
+        </div>
+
+        <div id="reportNoticeLoggedIn" class="notice hidden" style="margin-bottom: 14px;">
+          Submit your match result. <strong>ELO will update once both players confirm</strong> in Match History below.
+        </div>
+
+        <div id="reportNoticeNeedPlayers" class="notice danger hidden" style="margin-bottom: 14px;">
+          At least two players must register before a match can be reported.
+        </div>
+
+        <form id="matchForm">
+          <div id="quickRoleSelect" class="hidden" style="display:flex; gap:8px; align-items:center; margin-bottom: 4px;">
+            <span style="font-size:13px; font-weight:700;">I was the:</span>
+            <button type="button" class="small-btn primary" onclick="setReporterRole('winner')">Winner</button>
+            <button type="button" class="small-btn secondary" onclick="setReporterRole('loser')">Loser</button>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="winner">Winner</label>
+              <select id="winner" required onchange="updateEloPreview()">
+                <option value="" disabled selected>Select winner...</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="loser">Loser</label>
+              <select id="loser" required onchange="updateEloPreview()">
+                <option value="" disabled selected>Select loser...</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="winnerScore">Winner Score (Points/Sets)</label>
+              <input id="winnerScore" type="number" min="0" max="99" placeholder="e.g. 11" oninput="validateScoreInputs()">
+            </div>
+
+            <div class="form-group">
+              <label for="loserScore">Loser Score (Points/Sets)</label>
+              <input id="loserScore" type="number" min="0" max="99" placeholder="e.g. 7" oninput="validateScoreInputs()">
+            </div>
+          </div>
+
+          <div id="scoreWarning" class="notice danger hidden" style="padding: 8px 12px; font-size: 12px;">
+            Winner score must be greater than loser score.
+          </div>
+
+          <div id="eloPreview" class="elo-preview-box hidden">
+            <span>Projected Elo Change:</span>
+            <strong id="eloPreviewText" style="color:var(--green);">+16 / -16</strong>
+          </div>
+
+          <button id="submitMatchBtn" class="btn dark" type="submit">
+            Submit result
+          </button>
+        </form>
+      </div>
+
+      <!-- PLAYER ACCOUNT CARD -->
+      <div class="card">
+        <div class="card-header">
+          <h2 id="accountCardTitle">Player Account</h2>
+        </div>
+
+        <!-- LOGGED OUT VIEW -->
+        <div id="accountLoggedOut">
+          <!-- Clear Toggle Between Create Account and Log In -->
+          <div class="auth-toggle-group">
+            <button id="authTabSignup" aria-pressed="true" class="auth-toggle-btn active" onclick="switchAuthView('signup')">
+              Join the club
+            </button>
+            <button id="authTabLogin" aria-pressed="false" class="auth-toggle-btn" onclick="switchAuthView('login')">
+              Log In
+            </button>
+          </div>
+
+          <!-- SIGNUP FORM (DEDICATED) -->
+          <div id="signupView">
+            <div class="muted" style="font-size:13px; margin-bottom: 12px;">
+              Join the club to get your starting <strong>1000 Elo</strong> rating and start tracking matches.
+            </div>
+
+            <form id="signupForm">
+              <div class="form-group">
+                <label for="signupName">Full Player Name</label>
+                <input id="signupName" placeholder="e.g. Alex Smith" required autocomplete="name">
+              </div>
+
+              <div class="form-group">
+                <label for="signupUsername">Username</label>
+                <input id="signupUsername" placeholder="e.g. alexsmith" required autocomplete="username">
+              </div>
+
+              <div class="form-group">
+                <label for="signupPassword">Password</label>
+                <input id="signupPassword" type="password" minlength="4" placeholder="At least 4 characters" required autocomplete="new-password">
+              </div>
+
+              <button class="btn accent" type="submit" style="width: 100%; margin-top: 4px;">
+                Create account
+              </button>
+            </form>
+
+            <div style="text-align: center; margin-top: 14px; font-size: 13px;">
+              <span class="muted">Already registered?</span>
+              <a href="javascript:void(0)" onclick="switchAuthView('login')" style="color: var(--accent); font-weight: 700; margin-left: 4px; text-decoration: none;">
+                Log in here
+              </a>
+            </div>
+          </div>
+
+          <!-- LOGIN FORM (DEDICATED) -->
+          <div id="loginView" class="hidden">
+            <div class="muted" style="font-size:13px; margin-bottom: 12px;">
+              Sign in to report match scores or confirm results reported by other players.
+            </div>
+
+            <form id="loginForm">
+              <div class="form-group">
+                <label for="loginUsername">Username</label>
+                <input id="loginUsername" placeholder="e.g. alexsmith" required autocomplete="username">
+              </div>
+
+              <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input id="loginPassword" type="password" placeholder="••••••••" required autocomplete="current-password">
+              </div>
+
+              <button class="btn dark" type="submit" style="width: 100%; margin-top: 4px;">
+                Log in
+              </button>
+            </form>
+
+            <div style="text-align: center; margin-top: 14px; font-size: 13px;">
+              <span class="muted">Need an account?</span>
+              <a href="javascript:void(0)" onclick="switchAuthView('signup')" style="color: var(--accent); font-weight: 700; margin-left: 4px; text-decoration: none;">
+                Create an account here
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- LOGGED IN VIEW -->
+        <div id="accountLoggedIn" class="hidden">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div class="user-pill">
+              <span id="currentUserName"></span>
+            </div>
+            <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+              <button id="logoutBtn" class="small-btn secondary">Log Out</button>
+              <button id="deleteAccountBtn" class="small-btn danger">Delete Account</button>
+            </div>
+          </div>
+
+          <div class="account-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div class="muted" style="font-size:12px;">Your Rating</div>
+                <div style="font-size:24px; font-weight:900;" id="userEloDisplay">1000</div>
+              </div>
+              <div>
+                <div class="muted" style="font-size:12px;">Your Record</div>
+                <div style="font-size:18px; font-weight:800;" id="userRecordDisplay">0-0</div>
+              </div>
+              <div>
+                <div class="muted" style="font-size:12px;">Club Rank</div>
+                <div style="font-size:18px; font-weight:800;" id="userRankDisplay">#1</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="userPendingAlert" class="notice warning hidden" style="margin-top: 12px; font-size: 13px;">
+            <strong>Action Needed:</strong> You have match results awaiting your confirmation below!
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- RECENT MATCHES SECTION -->
+    <div class="card" style="margin-top: 20px;">
+      <div class="card-header">
+        <div>
+          <h2>Match history</h2>
+          <div class="muted" style="font-size:13px; margin-top:2px;">
+            Player reports need both confirmations. Admin-recorded matches are official immediately.
+          </div>
+        </div>
+        <div class="tabs" style="margin:0; border:0; padding:0;">
+          <button class="tab-btn active" id="filterMatchesAll" aria-pressed="true" onclick="setMatchFilter('all')">All Matches</button>
+          <button class="tab-btn" id="filterMatchesPending" aria-pressed="false" onclick="setMatchFilter('pending')">Pending</button>
+          <button class="tab-btn" id="filterMatchesOfficial" aria-pressed="false" onclick="setMatchFilter('official')">Official</button>
+        </div>
+      </div>
+
+      <div id="recentMatches" class="match-list"></div>
+    </div>
+  </section>
+
+  <!-- =========================================
+       PLAYERS ROSTER SECTION
+  ========================================= -->
+  <section id="players" class="section">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2>Club roster</h2>
+          <div class="muted" style="font-size:13px; margin-top:3px;">
+            All registered members of Carroll Ping Pong Club.
+          </div>
+        </div>
+        <input
+          id="playersSearch"
+          type="text"
+          aria-label="Search roster" placeholder="Search roster..."
+          style="max-width: 220px; padding: 7px 10px; font-size: 13px;"
+          oninput="renderPlayersTable()"
+        >
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Player Name</th>
+              <th>Username</th>
+              <th>Current ELO</th>
+              <th>Wins</th>
+              <th>Losses</th>
+              <th>Win %</th>
+            </tr>
+          </thead>
+          <tbody id="playersBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================
+       RULES & ELO CALCULATOR SECTION
+  ========================================= -->
+  <section id="rules" class="section">
+    <div class="grid-2">
+      <div class="card">
+        <h2>Rules of the table</h2>
+        <ol style="padding-left: 20px; line-height: 1.8; margin: 0 0 16px;">
+          <li><strong>Baseline:</strong> Every registered club player starts at <strong>1000 ELO</strong>.</li>
+          <li><strong>Match Length:</strong> Standard matches are played to 11 points (must win by at least 2 points).</li>
+          <li><strong>Match Reporting:</strong> Either participant may report the match result immediately following play.</li>
+          <li><strong>Admin Results:</strong> A club admin can add roster players without accounts and record official matches immediately.</li>
+          <li><strong>Two-Player Confirmation:</strong> ELO ratings do not change until <em>both</em> the winner and the loser log in and confirm the result.</li>
+          <li><strong>Dispute / Rejection:</strong> If a match was reported mistakenly or with incorrect score, either player can reject/cancel the pending report.</li>
+          <li><strong>Rating Conservation:</strong> Rating points gained by the winner equal the exact points deducted from the loser.</li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <h2>Elo Rating Formula</h2>
+        <p>
+          Ratings are calculated using the standard Elo rating formula with a <strong>K-Factor of 32</strong>:
+        </p>
+
+        <div style="background:#f8fafc; border:1px solid #dce2da; border-radius:8px; padding:12px; margin-bottom:12px; font-family:monospace; font-size:13px;">
+          <strong>1. Expected Win Probability:</strong><br>
+          E<sub>Winner</sub> = 1 / (1 + 10 <sup>(Loser Elo − Winner Elo) / 400</sup>)<br><br>
+          <strong>2. Rating Change:</strong><br>
+          Δ Elo = Round( 32 × (1 − E<sub>Winner</sub>) )
+        </div>
+
+        <div class="notice">
+          <strong>Interactive Test:</strong>
+          If a 1000 Elo player defeats a 1100 Elo player, expected score is ~36%, resulting in a <strong>+20 Elo</strong> gain!
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+<section id="admin" class="section">
+  <div class="card-header"><div><p class="eyebrow">Club management</p><h1 style="margin:0;font-size:28px">Admin desk</h1><p class="muted">Add roster players and record official results. Player accounts are optional.</p></div></div>
+  <div id="adminStatus" role="status" class="notice hidden" style="margin-bottom:20px"></div>
+  <div id="adminLoggedOut" class="card" style="max-width:440px">
+    <h2>Admin sign in</h2>
+    <p class="muted">Use the club administrator credentials.</p>
+    <form id="adminLoginForm">
+      <div class="form-group"><label for="adminUsername">Admin username</label><input id="adminUsername" autocomplete="username" required></div>
+      <div class="form-group"><label for="adminPassword">Admin password</label><input id="adminPassword" type="password" autocomplete="current-password" required></div>
+      <button class="btn accent" type="submit">Sign in as admin</button>
+    </form>
+  </div>
+  <div id="adminLoggedIn" class="hidden">
+    <div class="card-header"><span>Signed in as <strong id="adminName"></strong></span><button id="adminLogout" class="small-btn secondary">Sign out of admin</button></div>
+    <div class="grid-2">
+      <div class="card"><h2>Record an official match</h2><p class="muted">Select two roster players. Saving updates their ratings immediately.</p>
+        <form id="adminMatchForm">
+          <div class="form-grid">
+            <div class="form-group"><label for="adminWinner">Winning player</label><select id="adminWinner" required></select></div>
+            <div class="form-group"><label for="adminLoser">Losing player</label><select id="adminLoser" required></select></div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group"><label for="adminWinnerScore">Winner’s score</label><input id="adminWinnerScore" type="number" min="1" max="99" step="1" required></div>
+            <div class="form-group"><label for="adminLoserScore">Loser’s score</label><input id="adminLoserScore" type="number" min="0" max="99" step="1" required></div>
+          </div>
+          <p class="notice">Admin-recorded results are official. Players do not need accounts or confirmations.</p>
+          <button class="btn accent" type="submit">Save official match</button>
+        </form>
+      </div>
+      <div class="card"><h2>Add a roster player</h2><p class="muted">Use an existing player in the match form when possible. New players start at 1000 Elo and do not need a username or password.</p>
+        <form id="adminPlayerForm"><div class="form-group"><label for="adminPlayerName">Player’s full name</label><input id="adminPlayerName" maxlength="80" autocomplete="off" required></div><button class="btn accent" type="submit">Add player</button></form>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- =========================================
+     FOOTER
+========================================= -->
+<footer>
+  <strong>Carroll High School — Ping Pong Club</strong><br>
+  <span class="muted">Founders: Ethan Dong, Liang Sun, Ethan Mugilan, Cody Li</span>
+</footer>
+
+<!-- =========================================
+     JAVASCRIPT CLIENT & SYNC
+========================================= -->
+<script>
+/* =========================================
+   GLOBAL STATE & API CLIENT
+========================================= */
+const API_BASE = "";
+const SESSION_STORAGE_KEY = "carroll_pingpong_user_session_v5";
+
+let clubState = {
+  players: [],
+  matches: []
+};
+
+let currentUser = null;
+let activeMatchFilter = "all";
+
+// Load user session from local device storage
+try {
+  const savedUser = localStorage.getItem(SESSION_STORAGE_KEY);
+  if (savedUser) {
+    currentUser = JSON.parse(savedUser);
+  }
+} catch (e) {
+  currentUser = null;
+}
+
+/* =========================================
+   BACKEND SYNC API
+========================================= */
+async function fetchClubData() {
+  try {
+    const res = await fetch(`${API_BASE}/api/data`);
+    if (!res.ok) throw new Error("Failed to fetch club data");
+    const json = await res.json();
+    if (!json.success) throw new Error("Club data unavailable");
+    if (json.success) {
+      document.getElementById("syncStatus").textContent = "Up to date";
+      document.getElementById("syncStatus").classList.remove("offline");
+      clubState.players = json.players || [];
+      clubState.matches = json.matches || [];
+
+      // If logged in, update current user's latest stats
+      if (currentUser) {
+        const matchingPlayer = clubState.players.find(p => String(p.id) === String(currentUser.id));
+        if (matchingPlayer) {
+          currentUser.elo = matchingPlayer.elo;
+          currentUser.wins = matchingPlayer.wins;
+          currentUser.losses = matchingPlayer.losses;
+          localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(currentUser));
+        }
+      }
+
+      render();
+    }
+  } catch (err) {
+    document.getElementById("syncStatus").textContent = "Reconnecting";
+    document.getElementById("syncStatus").classList.add("offline");
+    console.warn("Sync warning:", err.message);
+  }
+}
+
+// Start real-time sync polling (every 3 seconds)
+setInterval(fetchClubData, 3000);
+window.addEventListener("focus", fetchClubData);
+
+/* =========================================
+   NAVIGATION & UI SWITCHING
+========================================= */
+function showSection(id) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  const target = document.getElementById(id);
+  if (target) target.classList.add("active");
+
+  document.querySelectorAll("nav button[data-section]").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.section === id);
+    if (btn.dataset.section === id) btn.setAttribute("aria-current", "page");
+    else btn.removeAttribute("aria-current");
+  });
+
+  render();
+
+  window.scrollTo({
+    top: 0,
+    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth"
+  });
+}
+
+document.querySelectorAll("nav button[data-section]").forEach(button => {
+  button.onclick = () => showSection(button.dataset.section);
+});
+
+function switchAuthView(view) {
+  const isSignup = view === "signup";
+  document.getElementById("authTabSignup").setAttribute("aria-pressed", String(isSignup));
+  document.getElementById("authTabLogin").setAttribute("aria-pressed", String(!isSignup));
+  document.getElementById("authTabSignup").classList.toggle("active", isSignup);
+  document.getElementById("authTabLogin").classList.toggle("active", !isSignup);
+  document.getElementById("signupView").classList.toggle("hidden", !isSignup);
+  document.getElementById("loginView").classList.toggle("hidden", isSignup);
+}
+
+function setMatchFilter(filter) {
+  activeMatchFilter = filter;
+  for (const [name, value] of [["All", "all"], ["Pending", "pending"], ["Official", "official"]]) {
+    document.getElementById(`filterMatches${name}`).setAttribute("aria-pressed", String(filter === value));
+  }
+  document.getElementById("filterMatchesAll").classList.toggle("active", filter === "all");
+  document.getElementById("filterMatchesPending").classList.toggle("active", filter === "pending");
+  document.getElementById("filterMatchesOfficial").classList.toggle("active", filter === "official");
+  renderRecentMatches();
+}
+
+/* =========================================
+   SECURITY & STRING HELPERS
+========================================= */
+function esc(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/* =========================================
+   AUTHENTICATION (SIGNUP & LOGIN)
+========================================= */
+document.getElementById("signupForm").onsubmit = async event => {
+  event.preventDefault();
+  const name = document.getElementById("signupName").value.trim();
+  const username = document.getElementById("signupUsername").value.trim().toLowerCase();
+  const password = document.getElementById("signupPassword").value;
+
+  if (!name || !username || !password) {
+    alert("Please fill out all fields.");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/signup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, username, password })
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      alert(data.error || "Failed to create account.");
+      return;
+    }
+
+    currentUser = data.user;
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(currentUser));
+    event.target.reset();
+
+    await fetchClubData();
+    syncSessionUI();
+    alert(`Welcome to Carroll Ping Pong Club, ${currentUser.name}! Your account has been created and synced across all devices.`);
+  } catch (err) {
+    alert("Connection error. Please ensure the server is reachable.");
+  }
+};
+
+document.getElementById("loginForm").onsubmit = async event => {
+  event.preventDefault();
+  const username = document.getElementById("loginUsername").value.trim().toLowerCase();
+  const password = document.getElementById("loginPassword").value;
+
+  if (!username || !password) {
+    alert("Please enter both username and password.");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      alert(data.error || "Invalid username or password.");
+      return;
+    }
+
+    currentUser = data.user;
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(currentUser));
+    event.target.reset();
+
+    await fetchClubData();
+    syncSessionUI();
+    alert(`Welcome back, ${currentUser.name}!`);
+  } catch (err) {
+    alert("Connection error. Please try again.");
+  }
+};
+
+document.getElementById("logoutBtn").onclick = () => {
+  const name = currentUser ? currentUser.name : "Player";
+  currentUser = null;
+  localStorage.removeItem(SESSION_STORAGE_KEY);
+  syncSessionUI();
+  alert(`Logged out successfully.`);
+};
+
+document.getElementById("deleteAccountBtn").onclick = async () => {
+  if (!currentUser) return;
+
+  const confirmed = confirm(
+    `Are you sure you want to permanently delete your account (${currentUser.name})?\n\n` +
+    `• Your player profile will be removed from the club roster.\n` +
+    `• Any pending unconfirmed matches will be deleted.\n` +
+    `• This action cannot be undone.`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/delete-account`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: currentUser.id })
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      alert(data.error || "Failed to delete account.");
+      return;
+    }
+
+    const deletedName = currentUser.name;
+    currentUser = null;
+    localStorage.removeItem(SESSION_STORAGE_KEY);
+
+    await fetchClubData();
+    syncSessionUI();
+    alert(`Account for ${deletedName} was permanently deleted.`);
+  } catch (err) {
+    alert("Connection error while deleting account.");
+  }
+};
+
+function syncSessionUI() {
+  const loggedIn = !!currentUser;
+
+  document.getElementById("accountLoggedOut").classList.toggle("hidden", loggedIn);
+  document.getElementById("accountLoggedIn").classList.toggle("hidden", !loggedIn);
+
+  document.getElementById("reportNoticeLoggedOut").classList.toggle("hidden", loggedIn);
+  document.getElementById("reportNoticeLoggedIn").classList.toggle("hidden", !loggedIn);
+  document.getElementById("quickRoleSelect").classList.toggle("hidden", !loggedIn);
+
+  if (loggedIn) {
+    document.getElementById("currentUserName").textContent = currentUser.name;
+
+    const player = clubState.players.find(p => String(p.id) === String(currentUser.id)) || currentUser;
+    document.getElementById("userEloDisplay").textContent = Math.round(player.elo || 1000);
+    document.getElementById("userRecordDisplay").textContent = `${player.wins || 0}-${player.losses || 0}`;
+
+    const sorted = [...clubState.players].sort((a, b) => b.elo - a.elo);
+    const rankIdx = sorted.findIndex(p => String(p.id) === String(currentUser.id));
+    document.getElementById("userRankDisplay").textContent = rankIdx >= 0 ? `#${rankIdx + 1}` : "#1";
+
+    // Check if user has pending match confirmations waiting for them
+    const pendingForUser = clubState.matches.filter(m => {
+      if (m.eloApplied) return false;
+      const isInvolved = String(m.winnerId) === String(currentUser.id) || String(m.loserId) === String(currentUser.id);
+      const hasConfirmed = m.confirmations && m.confirmations[currentUser.id];
+      return isInvolved && !hasConfirmed;
+    });
+
+    document.getElementById("userPendingAlert").classList.toggle("hidden", pendingForUser.length === 0);
+  }
+
+  render();
+}
+
+/* =========================================
+   MATCH REPORTING & CONFIRMATION
+========================================= */
+function setReporterRole(role) {
+  if (!currentUser) return;
+
+  const winnerSelect = document.getElementById("winner");
+  const loserSelect = document.getElementById("loser");
+
+  if (role === "winner") {
+    winnerSelect.value = currentUser.id;
+    if (loserSelect.value === String(currentUser.id)) {
+      loserSelect.value = "";
+    }
+  } else {
+    loserSelect.value = currentUser.id;
+    if (winnerSelect.value === String(currentUser.id)) {
+      winnerSelect.value = "";
+    }
+  }
+  updateEloPreview();
+}
+
+function validateScoreInputs() {
+  const wScore = document.getElementById("winnerScore").value;
+  const lScore = document.getElementById("loserScore").value;
+  const warn = document.getElementById("scoreWarning");
+
+  if (wScore !== "" && lScore !== "") {
+    const wNum = parseInt(wScore, 10);
+    const lNum = parseInt(lScore, 10);
+    if (!isNaN(wNum) && !isNaN(lNum) && wNum <= lNum) {
+      warn.classList.remove("hidden");
+      return false;
+    }
+  }
+  warn.classList.add("hidden");
+  return true;
+}
+
+function updateEloPreview() {
+  const wId = document.getElementById("winner").value;
+  const lId = document.getElementById("loser").value;
+  const previewBox = document.getElementById("eloPreview");
+  const previewText = document.getElementById("eloPreviewText");
+
+  if (!wId || !lId || wId === lId) {
+    previewBox.classList.add("hidden");
+    return;
+  }
+
+  const winner = clubState.players.find(p => String(p.id) === String(wId));
+  const loser = clubState.players.find(p => String(p.id) === String(lId));
+
+  if (winner && loser) {
+    const prob = 1 / (1 + Math.pow(10, (loser.elo - winner.elo) / 400));
+    const gain = Math.max(1, Math.round(32 * (1 - prob)));
+    previewText.textContent = `Winner +${gain} Elo / Loser -${gain} Elo`;
+    previewBox.classList.remove("hidden");
+  } else {
+    previewBox.classList.add("hidden");
+  }
+}
+
+document.getElementById("matchForm").onsubmit = async event => {
+  event.preventDefault();
+
+  if (!currentUser) {
+    alert("Please log in or create an account to submit a match result.");
+    showSection("matches");
+    return;
+  }
+
+  const winnerId = document.getElementById("winner").value;
+  const loserId = document.getElementById("loser").value;
+
+  if (!winnerId || !loserId) {
+    alert("Please select both a winner and a loser.");
+    return;
+  }
+
+  if (String(winnerId) === String(loserId)) {
+    alert("The winner and loser must be different players.");
+    return;
+  }
+
+  const wScoreRaw = document.getElementById("winnerScore").value.trim();
+  const lScoreRaw = document.getElementById("loserScore").value.trim();
+
+  if (wScoreRaw !== "" && lScoreRaw !== "") {
+    const wNum = parseInt(wScoreRaw, 10);
+    const lNum = parseInt(lScoreRaw, 10);
+    if (wNum <= lNum) {
+      alert("Invalid score: Winner score must be strictly greater than loser score.");
+      return;
+    }
+  }
+
+  const scoreText = (wScoreRaw !== "" && lScoreRaw !== "")
+    ? `${wScoreRaw}-${lScoreRaw}`
+    : "Score unrecorded";
+
+  try {
+    const res = await fetch(`${API_BASE}/api/matches`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        winnerId,
+        loserId,
+        reporterId: currentUser.id,
+        score: scoreText
+      })
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      alert(json.error || "Failed to submit match result.");
+      return;
+    }
+
+    event.target.reset();
+    document.getElementById("eloPreview").classList.add("hidden");
+    document.getElementById("scoreWarning").classList.add("hidden");
+
+    await fetchClubData();
+
+    alert(
+      `Match submitted! ${currentUser.name} confirmed their side.\n\n` +
+      `The opponent can now log in on any device to confirm the result.`
+    );
+  } catch (err) {
+    alert("Connection error while submitting match.");
+  }
+};
+
+async function confirmMatch(matchId) {
+  if (!currentUser) {
+    alert("Please log in to confirm match results.");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/api/matches/${matchId}/confirm`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: currentUser.id })
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      alert(json.error || "Failed to confirm match.");
+      return;
+    }
+
+    await fetchClubData();
+
+    if (json.eloApplied) {
+      alert(`Both players confirmed! The match is official and Elo ratings have been updated across all devices.`);
+    } else {
+      alert("Your confirmation has been saved. Awaiting confirmation from opponent.");
+    }
+  } catch (err) {
+    alert("Connection error while confirming match.");
+  }
+}
+
+async function rejectOrCancelMatch(matchId) {
+  if (!currentUser) {
+    alert("Please log in to manage match results.");
+    return;
+  }
+
+  const match = clubState.matches.find(m => String(m.id) === String(matchId));
+  if (!match) return;
+
+  const promptMsg = match.eloApplied
+    ? `Void and remove this official match (${match.winnerName} def. ${match.loserName})? Elo ratings will be rolled back.`
+    : `Reject/Cancel this pending match report (${match.winnerName} vs ${match.loserName})?`;
+
+  if (!confirm(promptMsg)) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/matches/${matchId}/reject`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: currentUser.id })
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      alert(json.error || "Failed to remove match.");
+      return;
+    }
+
+    await fetchClubData();
+    alert("Match removed successfully.");
+  } catch (err) {
+    alert("Connection error while removing match.");
+  }
+}
+
+/* =========================================
+   RENDERING FUNCTIONS
+========================================= */
+function render() {
+  renderHomeStats();
+  renderHomeBoard();
+  renderAdminPlayers();
+  renderLeaderboard();
+  renderPlayersTable();
+  renderDropdowns();
+  renderRecentMatches();
+}
+
+function renderHomeBoard() {
+  const leaders = [...clubState.players].sort((a, b) => b.elo - a.elo || (b.wins || 0) - (a.wins || 0)).slice(0, 5);
+  document.getElementById("homeLeaderboard").innerHTML = leaders.length ? leaders.map((p, i) => `<tr><td class="rank">${String(i + 1).padStart(2, "0")}</td><td><strong>${esc(p.name)}</strong></td><td class="muted">${p.wins || 0}–${p.losses || 0}</td><td class="rating-number">${Math.round(p.elo)}</td></tr>`).join("") : '<tr><td colspan="4" class="empty-state">The ladder is open.<br><span>Join the club to be the first player on the board.</span></td></tr>';
+  const results = clubState.matches.filter(m => m.eloApplied).slice().reverse().slice(0, 3);
+  document.getElementById("homeResults").innerHTML = results.length ? results.map(m => `<div class="result-row"><div><strong>${esc(m.winnerName)}</strong><span class="muted"> beat </span><strong>${esc(m.loserName)}</strong><small>${m.date ? esc(new Date(m.date).toLocaleDateString([], {month: "short", day: "numeric"})) : "Official result"}</small></div><span class="result-score">${esc(m.score)}</span></div>`).join("") : '<div class="empty-state">First serve is yours.<br><span>Confirmed matches will appear here.</span></div>';
+}
+
+function renderHomeStats() {
+  document.getElementById("statPlayers").textContent = clubState.players.length;
+
+  const officialMatches = clubState.matches.filter(m => m.eloApplied);
+  const pendingMatches = clubState.matches.filter(m => !m.eloApplied);
+
+  document.getElementById("statMatches").textContent = officialMatches.length;
+  document.getElementById("statPendingSub").textContent = `${pendingMatches.length} pending confirmation`;
+
+  const avgElo = clubState.players.length
+    ? Math.round(clubState.players.reduce((sum, p) => sum + p.elo, 0) / clubState.players.length)
+    : 1000;
+  document.getElementById("statElo").textContent = avgElo;
+}
+
+function renderLeaderboard() {
+  const searchTerm = (document.getElementById("leaderboardSearch")?.value || "").toLowerCase();
+  const sorted = [...clubState.players].sort((a, b) => {
+    if (b.elo !== a.elo) return b.elo - a.elo;
+    return (b.wins || 0) - (a.wins || 0);
+  });
+
+  const filtered = sorted.filter(p =>
+    p.name.toLowerCase().includes(searchTerm) ||
+    (p.username && p.username.toLowerCase().includes(searchTerm))
+  );
+
+  const tbody = document.getElementById("leaderboardBody");
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="muted" style="text-align:center; padding: 32px 16px;">
+          ${searchTerm ? "No players match your search." : "No players registered yet."}<br>
+          <button class="small-btn primary" style="margin-top:10px;" onclick="showSection('matches')">
+            Create an Account to Join the Roster
+          </button>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((player, idx) => {
+    const rankIndex = sorted.indexOf(player);
+    const isCurrent = currentUser && String(currentUser.id) === String(player.id);
+    const totalMatches = (player.wins || 0) + (player.losses || 0);
+    const winRate = totalMatches > 0 ? Math.round(((player.wins || 0) / totalMatches) * 100) : 0;
+
+    let rankClass = "rank";
+    let rankBadge = `${rankIndex + 1}`;
+    if (rankIndex === 0) { rankClass = "rank-1"; rankBadge = "1"; }
+    else if (rankIndex === 1) { rankClass = "rank-2"; rankBadge = "2"; }
+    else if (rankIndex === 2) { rankClass = "rank-3"; rankBadge = "3"; }
+
+    return `
+      <tr class="${isCurrent ? "highlight-row" : ""}">
+        <td class="${rankClass}"><strong>${rankBadge}</strong></td>
+        <td>
+          <strong>${esc(player.name)}</strong>
+          ${isCurrent ? '<span class="confirm-chip done" style="margin-left:6px;">You</span>' : ''}
+        </td>
+        <td><span class="elo-pill">${Math.round(player.elo)}</span></td>
+        <td>${totalMatches}</td>
+        <td><strong>${player.wins || 0}</strong> - ${player.losses || 0}</td>
+        <td>${winRate}%</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function renderPlayersTable() {
+  const searchTerm = (document.getElementById("playersSearch")?.value || "").toLowerCase();
+  const sorted = [...clubState.players].sort((a, b) => b.elo - a.elo);
+  const filtered = sorted.filter(p =>
+    p.name.toLowerCase().includes(searchTerm) ||
+    (p.username && p.username.toLowerCase().includes(searchTerm))
+  );
+
+  const tbody = document.getElementById("playersBody");
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="muted" style="text-align:center; padding: 32px 16px;">
+          ${searchTerm ? "No players match your search." : "No registered players yet."}
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(player => {
+    const total = (player.wins || 0) + (player.losses || 0);
+    const winRate = total > 0 ? Math.round(((player.wins || 0) / total) * 100) : 0;
+    return `
+      <tr>
+        <td><strong>${esc(player.name)}</strong></td>
+        <td class="muted">${player.username ? "@" + esc(player.username) : "No account"}</td>
+        <td><span class="elo-pill">${Math.round(player.elo)}</span></td>
+        <td style="color:var(--green); font-weight:700;">${player.wins || 0}</td>
+        <td style="color:var(--red); font-weight:700;">${player.losses || 0}</td>
+        <td>${winRate}%</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function renderDropdowns() {
+  const winnerSelect = document.getElementById("winner");
+  const loserSelect = document.getElementById("loser");
+  const needPlayersNotice = document.getElementById("reportNoticeNeedPlayers");
+  const submitBtn = document.getElementById("submitMatchBtn");
+
+  const currentWinnerVal = winnerSelect.value;
+  const currentLoserVal = loserSelect.value;
+
+  if (clubState.players.length < 2) {
+    needPlayersNotice.classList.remove("hidden");
+  } else {
+    needPlayersNotice.classList.add("hidden");
+  }
+
+  const buildOptions = (selectedVal, placeholder) => {
+    let html = `<option value="" disabled ${!selectedVal ? "selected" : ""}>${placeholder}</option>`;
+    html += clubState.players.map(p => `
+      <option value="${p.id}" ${String(selectedVal) === String(p.id) ? "selected" : ""}>
+        ${esc(p.name)} (${Math.round(p.elo)} Elo)
+      </option>
+    `).join("");
+    return html;
+  };
+
+  winnerSelect.innerHTML = buildOptions(currentWinnerVal, "Select winner...");
+  loserSelect.innerHTML = buildOptions(currentLoserVal, "Select loser...");
+}
+
+function renderRecentMatches() {
+  const container = document.getElementById("recentMatches");
+
+  let list = clubState.matches.slice().reverse();
+
+  if (activeMatchFilter === "pending") {
+    list = list.filter(m => !m.eloApplied);
+  } else if (activeMatchFilter === "official") {
+    list = list.filter(m => m.eloApplied);
+  }
+
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div class="muted" style="text-align:center; padding:28px 16px;">
+        ${activeMatchFilter === "pending" ? "No matches waiting for confirmation." : activeMatchFilter === "official" ? "No confirmed matches yet." : "No matches recorded yet. Report a match to get started."}
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = list.map(match => {
+    const winnerConfirmed = !!(match.confirmations && match.confirmations[match.winnerId]);
+    const loserConfirmed = !!(match.confirmations && match.confirmations[match.loserId]);
+
+    const isUserWinner = currentUser && String(currentUser.id) === String(match.winnerId);
+    const isUserLoser = currentUser && String(currentUser.id) === String(match.loserId);
+    const isInvolved = isUserWinner || isUserLoser;
+    const hasUserConfirmed = currentUser && match.confirmations && !!match.confirmations[currentUser.id];
+
+    let actionButtons = "";
+
+    if (match.eloApplied) {
+      actionButtons = `
+        <span class="badge badge-official">${match.verification === "admin" ? "Admin recorded" : "Official"} • +${match.winnerChange} / -${match.loserChange} Elo</span>
+      `;
+    } else {
+      if (isInvolved && !hasUserConfirmed) {
+        actionButtons = `
+          <button class="small-btn success" onclick="confirmMatch(${match.id})">✓ Confirm</button>
+          <button class="small-btn danger" onclick="rejectOrCancelMatch(${match.id})">✕ Reject</button>
+        `;
+      } else if (isInvolved && hasUserConfirmed) {
+        actionButtons = `
+          <span class="badge badge-pending">Waiting for opponent</span>
+          <button class="small-btn danger" title="Cancel your submission" onclick="rejectOrCancelMatch(${match.id})">Cancel</button>
+        `;
+      } else {
+        actionButtons = `<span class="badge badge-pending">Awaiting confirmation</span>`;
+      }
+    }
+
+    const formattedDate = match.date ? new Date(match.date).toLocaleDateString([], {
+      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit"
+    }) : "";
+
+    return `
+      <div class="match-item ${match.eloApplied ? 'is-official' : 'is-pending'}">
+        <div class="match-main">
+          <div class="match-headline">
+            <span style="color:var(--green); font-weight:800;">${esc(match.winnerName)}</span>
+            <span class="muted" style="font-size:13px; font-weight:normal;">defeated</span>
+            <strong>${esc(match.loserName)}</strong>
+          </div>
+          <div class="match-meta">
+            <span><strong>Score:</strong> ${esc(match.score)}</span>
+            <span>•</span>
+            <span>${formattedDate}</span>
+          </div>
+          <div class="confirm-status ${match.verification === 'admin' ? 'hidden' : ''}">
+            <span class="confirm-chip ${winnerConfirmed ? 'done' : ''}">
+              ${winnerConfirmed ? '✓' : '○'} ${esc(match.winnerName)}
+            </span>
+            <span class="confirm-chip ${loserConfirmed ? 'done' : ''}">
+              ${loserConfirmed ? '✓' : '○'} ${esc(match.loserName)}
+            </span>
+          </div>
+        </div>
+        <div class="match-actions">
+          ${actionButtons}
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+/* Admin privileges are verified on the server with an HttpOnly session cookie. */
+let currentAdmin = null;
+let adminRequestId = null;
+function adminMessage(text, error = false) {
+  const status = document.getElementById('adminStatus');
+  status.textContent = text;
+  status.className = error ? 'notice danger' : 'notice success';
+}
+function syncAdminUI() {
+  document.getElementById('adminLoggedOut').classList.toggle('hidden', !!currentAdmin);
+  document.getElementById('adminLoggedIn').classList.toggle('hidden', !currentAdmin);
+  document.getElementById('adminName').textContent = currentAdmin?.username || '';
+}
+async function adminApi(path, body) {
+  const response = await fetch(`${API_BASE}/api/admin/${path}`, {
+    method: body === undefined ? 'GET' : 'POST', credentials: 'same-origin',
+    headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body)
+  });
+  const result = await response.json();
+  if (!response.ok || !result.success) {
+    if (response.status === 401) { currentAdmin = null; syncAdminUI(); }
+    throw new Error(result.error || 'Could not save changes. Please retry.');
+  }
+  return result;
+}
+async function restoreAdminSession() {
+  try { currentAdmin = (await adminApi('session')).admin; } catch { currentAdmin = null; }
+  syncAdminUI();
+}
+function renderAdminPlayers() {
+  for (const id of ['adminWinner', 'adminLoser']) {
+    const select = document.getElementById(id);
+    const selected = select.value;
+    select.innerHTML = '<option value="" disabled>Select a player…</option>' + clubState.players.map(p => `<option value="${esc(p.id)}">${esc(p.name)} (${Math.round(p.elo)} Elo)</option>`).join('');
+    select.value = clubState.players.some(p => String(p.id) === selected) ? selected : '';
+  }
+}
+async function submitAdminForm(event, work) {
+  event.preventDefault();
+  const button = event.target.querySelector('button[type="submit"]');
+  button.disabled = true;
+  try { await work(); } catch (error) { adminMessage(error.message, true); }
+  finally { button.disabled = false; }
+}
+document.getElementById('adminLoginForm').onsubmit = event => submitAdminForm(event, async () => {
+  const result = await adminApi('login', { username: document.getElementById('adminUsername').value.trim(), password: document.getElementById('adminPassword').value });
+  currentAdmin = result.admin;
+  event.target.reset(); syncAdminUI(); await fetchClubData();
+  adminMessage('Signed in. You can add players and record official matches.');
+});
+document.getElementById('adminLogout').onclick = async () => {
+  try { await adminApi('logout', {}); currentAdmin = null; syncAdminUI(); adminMessage('Signed out of admin.'); }
+  catch (error) { adminMessage(error.message, true); }
+};
+document.getElementById('adminPlayerForm').onsubmit = event => submitAdminForm(event, async () => {
+  const result = await adminApi('players', { name: document.getElementById('adminPlayerName').value.trim() });
+  event.target.reset(); await fetchClubData(); adminMessage(`${result.player.name} added to the roster. No player account was created.`);
+});
+document.getElementById('adminMatchForm').addEventListener('input', () => { adminRequestId = null; });
+document.getElementById('adminMatchForm').onsubmit = event => submitAdminForm(event, async () => {
+  const winnerId = document.getElementById('adminWinner').value;
+  const loserId = document.getElementById('adminLoser').value;
+  const winnerScore = Number(document.getElementById('adminWinnerScore').value);
+  const loserScore = Number(document.getElementById('adminLoserScore').value);
+  if (winnerId === loserId) throw new Error('Choose two different players.');
+  if (winnerScore <= loserScore) throw new Error('The winner must have the higher score.');
+  adminRequestId ||= crypto.randomUUID();
+  await adminApi('matches', { winnerId, loserId, winnerScore, loserScore, requestId: adminRequestId });
+  adminRequestId = null; event.target.reset();
+  document.getElementById('adminWinner').value = '';
+  document.getElementById('adminLoser').value = '';
+  await fetchClubData(); adminMessage('Official match saved. Ratings and match history are updated.');
+});
+
+/* =========================================
+   INITIALIZATION
+========================================= */
+syncSessionUI();
+fetchClubData();
+restoreAdminSession();
+</script>
+
+</body>
+</html>
+

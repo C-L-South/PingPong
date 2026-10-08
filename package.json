@@ -1,0 +1,21 @@
+{
+  "name": "carroll-pingpong-club",
+  "version": "1.0.0",
+  "description": "Carroll High School Ping Pong Club \u2014 Elo & Match Tracker with Cross-Device Sync",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "pg": "^8.23.1"
+  },
+  "keywords": [
+    "pingpong",
+    "elo",
+    "club",
+    "table-tennis"
+  ],
+  "author": "Carroll Ping Pong Club",
+  "license": "ISC"
+}
